@@ -14,6 +14,7 @@
     ::-webkit-scrollbar-thumb{background:#26304A;border-radius:2px}
     select,input,optgroup{background:#1E2540;color:#E8F0FF}
     select option{background:#1E2540}
+    input::placeholder{color:#5A6A8A}
   </style>
 </head>
 <body>
@@ -24,11 +25,7 @@ const {
   useMemo,
   useEffect
 } = React;
-
-/* ── VERSIÓN DE DATOS: incrementar cada vez que se actualicen estudios ── */
-const DATA_VERSION = 4;
-
-/* ── TOKENS ── */
+const DATA_VERSION = 5;
 const C = {
   bg0: '#080B12',
   bg1: '#0F1420',
@@ -88,8 +85,6 @@ function refStr(lo, hi) {
   if (hi != null) return `< ${hi}`;
   return null;
 }
-
-/* ── REF BAR ── */
 function RefBarInline({
   lo,
   hi,
@@ -151,8 +146,6 @@ function RefBarInline({
     }
   }));
 }
-
-/* ── SPARKLINE ── */
 function Spark({
   pts,
   lo,
@@ -206,11 +199,7 @@ function Spark({
   })));
 }
 
-/* ══════════════════════════════════════════
-   DATOS — actualizar aquí en cada nuevo estudio
-   NM_DEF: [id, catId, label, unit, lo, hi, {dateKey:val}, note?]
-   QM_DEF: [id, catId, label, {dateKey:txt}, goodVals[], note?]
-   ══════════════════════════════════════════ */
+/* ── DATA ── */
 const INIT_DATES = [{
   k: 'n21',
   label: 'Nov 2021',
@@ -576,9 +565,13 @@ const CATS = [{
   id: 'ecg',
   em: '📈',
   label: 'ECG'
+}, {
+  id: 'todo',
+  em: '📋',
+  label: 'Todo'
 }];
 
-/* ── PERSISTENCIA localStorage ── */
+/* ── PERSISTENCIA ── */
 function buildBase() {
   const v = {};
   NM_DEF.forEach(m => {
@@ -599,7 +592,6 @@ function loadState() {
     const base = buildBase();
     const baseDateKeys = new Set(INIT_DATES.map(d => d.k));
     if (savedVer < DATA_VERSION) {
-      /* Nueva versión HTML: usar base nueva + conservar fechas extra del user */
       const savedVals = JSON.parse(localStorage.getItem('hd_vals') || '{}');
       Object.keys(savedVals).forEach(id => {
         const extras = Object.fromEntries(Object.entries(savedVals[id] || {}).filter(([dk]) => !baseDateKeys.has(dk)));
@@ -621,7 +613,6 @@ function loadState() {
     } else {
       const savedVals = JSON.parse(localStorage.getItem('hd_vals') || '{}');
       const savedDates = JSON.parse(localStorage.getItem('hd_dates') || JSON.stringify(INIT_DATES));
-      /* Merge base over saved (in case HTML updated same version by mistake) */
       const merged = {
         ...savedVals
       };
@@ -682,25 +673,6 @@ function AddModal({
       setVal('');
     }
   };
-  const ovl = {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.75)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    padding: 16
-  };
-  const box = {
-    background: C.bg2,
-    border: `1px solid ${C.bdr}`,
-    borderRadius: 18,
-    padding: 24,
-    width: '100%',
-    maxWidth: 440,
-    boxShadow: '0 32px 80px rgba(0,0,0,0.8)'
-  };
   const inp = {
     background: C.bg3,
     border: `1px solid ${C.bdr}`,
@@ -712,10 +684,27 @@ function AddModal({
     width: '100%'
   };
   return /*#__PURE__*/React.createElement("div", {
-    style: ovl,
+    style: {
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.75)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: 16
+    },
     onClick: onClose
   }, /*#__PURE__*/React.createElement("div", {
-    style: box,
+    style: {
+      background: C.bg2,
+      border: `1px solid ${C.bdr}`,
+      borderRadius: 18,
+      padding: 24,
+      width: '100%',
+      maxWidth: 440,
+      boxShadow: '0 32px 80px rgba(0,0,0,0.8)'
+    },
     onClick: e => e.stopPropagation()
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -773,7 +762,7 @@ function AddModal({
     value: mid,
     onChange: e => setMid(e.target.value),
     style: inp
-  }, CATS.map(cat => {
+  }, CATS.filter(c => c.id !== 'todo').map(cat => {
     const ms = NM_DEF.filter(m => m[1] === cat.id);
     if (!ms.length) return null;
     return /*#__PURE__*/React.createElement("optgroup", {
@@ -823,25 +812,6 @@ function AddDateModal({
   const [label, setLabel] = useState('');
   const [full, setFull] = useState('');
   const [lab, setLab] = useState('Swiss Medical');
-  const ovl = {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.75)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    padding: 16
-  };
-  const box = {
-    background: C.bg2,
-    border: `1px solid ${C.bdr}`,
-    borderRadius: 18,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-    boxShadow: '0 32px 80px rgba(0,0,0,0.8)'
-  };
   const inp = {
     background: C.bg3,
     border: `1px solid ${C.bdr}`,
@@ -863,10 +833,27 @@ function AddDateModal({
     onClose();
   };
   return /*#__PURE__*/React.createElement("div", {
-    style: ovl,
+    style: {
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.75)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: 16
+    },
     onClick: onClose
   }, /*#__PURE__*/React.createElement("div", {
-    style: box,
+    style: {
+      background: C.bg2,
+      border: `1px solid ${C.bdr}`,
+      borderRadius: 18,
+      padding: 24,
+      width: '100%',
+      maxWidth: 400,
+      boxShadow: '0 32px 80px rgba(0,0,0,0.8)'
+    },
     onClick: e => e.stopPropagation()
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -928,7 +915,7 @@ function AddDateModal({
   }, "Agregar fecha"))));
 }
 
-/* ── ECG CARD ── */
+/* ── ECG ── */
 function ECGCard({
   e
 }) {
@@ -1017,7 +1004,8 @@ function ECGCard({
 function DRow({
   m,
   dates,
-  vals
+  vals,
+  catTag
 }) {
   const [id,, label, unit, lo, hi,, note] = m;
   const mv = vals[id] || {};
@@ -1043,6 +1031,16 @@ function DRow({
       borderLeft: `3px solid ${SC[s2]}`,
       verticalAlign: 'top',
       minWidth: 180
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1084,7 +1082,20 @@ function DRow({
     hi: hi,
     lastV: lv,
     fullWidth: false
-  }))), dates.map(d => {
+  }))), catTag && /*#__PURE__*/React.createElement("span", {
+    style: {
+      background: C.bg3,
+      color: C.mu,
+      borderRadius: 5,
+      padding: '2px 6px',
+      fontSize: 9,
+      fontWeight: 600,
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+      flexShrink: 0,
+      marginTop: 1
+    }
+  }, catTag))), dates.map(d => {
     const v = mv[d.k];
     const cs = v != null ? st(v, lo, hi) : 'no';
     return /*#__PURE__*/React.createElement("td", {
@@ -1151,11 +1162,12 @@ function DRow({
   }, trend), " ", SLB[s2])));
 }
 
-/* ── QUAL ROW (desktop) ── */
+/* ── QUAL ROW ── */
 function QRow({
   m,
   dates,
-  vals
+  vals,
+  catTag
 }) {
   const [id,, label] = m;
   const iv = m[3] || {};
@@ -1175,6 +1187,16 @@ function QRow({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
       color: C.hi,
       fontSize: 13,
       fontWeight: 500
@@ -1185,7 +1207,20 @@ function QRow({
       fontSize: 10,
       marginTop: 2
     }
-  }, note)), dates.map(d => {
+  }, note)), catTag && /*#__PURE__*/React.createElement("span", {
+    style: {
+      background: C.bg3,
+      color: C.mu,
+      borderRadius: 5,
+      padding: '2px 6px',
+      fontSize: 9,
+      fontWeight: 600,
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+      flexShrink: 0,
+      marginTop: 1
+    }
+  }, catTag))), dates.map(d => {
     const v = mv[d.k];
     const g = isG(v);
     return /*#__PURE__*/React.createElement("td", {
@@ -1224,7 +1259,7 @@ function QRow({
   }));
 }
 
-/* ── MOBILE CARD ── */
+/* ── MOBILE CARDS ── */
 function MCard({
   m,
   dates,
@@ -1363,8 +1398,6 @@ function MCard({
     H: 36
   })));
 }
-
-/* ── MOBILE QUAL CARD ── */
 function MQCard({
   m,
   dates,
@@ -1453,6 +1486,192 @@ function MQCard({
   })));
 }
 
+/* ── TABLE HEADER ── */
+function TableHeader({
+  dates
+}) {
+  const th = {
+    padding: '7px 10px',
+    fontSize: 10.5,
+    color: C.mu,
+    textTransform: 'uppercase',
+    letterSpacing: '0.6px',
+    fontWeight: 600,
+    position: 'sticky',
+    top: 0,
+    background: C.bg0,
+    zIndex: 2
+  };
+  return /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    style: {
+      ...th,
+      textAlign: 'left'
+    }
+  }, "Marcador & Referencia"), dates.map(d => /*#__PURE__*/React.createElement("th", {
+    key: d.k,
+    style: {
+      ...th,
+      textAlign: 'right'
+    }
+  }, /*#__PURE__*/React.createElement("div", null, d.label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 400,
+      fontSize: 9.5,
+      textTransform: 'none',
+      letterSpacing: 0,
+      marginTop: 1
+    }
+  }, d.lab))), /*#__PURE__*/React.createElement("th", {
+    style: th
+  }, "Tendencia"), /*#__PURE__*/React.createElement("th", {
+    style: th
+  }, "Estado")));
+}
+
+/* ── MULTI VIEW (Todo + Búsqueda) ── */
+function MultiView({
+  sections,
+  dates,
+  vals,
+  showCatTags
+}) {
+  return /*#__PURE__*/React.createElement("table", {
+    style: {
+      width: '100%',
+      borderCollapse: 'separate',
+      borderSpacing: '0 4px'
+    }
+  }, /*#__PURE__*/React.createElement(TableHeader, {
+    dates: dates
+  }), /*#__PURE__*/React.createElement("tbody", null, sections.map(({
+    cat,
+    nms,
+    qms
+  }) => {
+    const hasContent = nms.length > 0 || qms.length > 0 || cat.id === 'ecg';
+    if (!hasContent) return null;
+    return /*#__PURE__*/React.createElement(React.Fragment, {
+      key: cat.id
+    }, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
+      colSpan: dates.length + 3,
+      style: {
+        padding: '16px 12px 6px 4px'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 16
+      }
+    }, cat.em), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.ac,
+        fontWeight: 700,
+        fontSize: 12,
+        textTransform: 'uppercase',
+        letterSpacing: '0.7px'
+      }
+    }, cat.label), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        height: 1,
+        background: C.bdr,
+        marginLeft: 4
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.mu,
+        fontSize: 10
+      }
+    }, nms.length + qms.length, " marcadores")))), cat.id === 'ecg' && ECG_DEF.map((e, i) => /*#__PURE__*/React.createElement("tr", {
+      key: i
+    }, /*#__PURE__*/React.createElement("td", {
+      colSpan: dates.length + 3,
+      style: {
+        padding: '0 0 4px'
+      }
+    }, /*#__PURE__*/React.createElement(ECGCard, {
+      e: e
+    })))), nms.map(m => /*#__PURE__*/React.createElement(DRow, {
+      key: m[0],
+      m: m,
+      dates: dates,
+      vals: vals,
+      catTag: showCatTags ? cat.label : null
+    })), qms.map(m => /*#__PURE__*/React.createElement(QRow, {
+      key: m[0],
+      m: m,
+      dates: dates,
+      vals: vals,
+      catTag: showCatTags ? cat.label : null
+    })));
+  })));
+}
+function MultiViewMobile({
+  sections,
+  dates,
+  vals
+}) {
+  return /*#__PURE__*/React.createElement("div", null, sections.map(({
+    cat,
+    nms,
+    qms
+  }) => {
+    const hasContent = nms.length > 0 || qms.length > 0 || cat.id === 'ecg';
+    if (!hasContent) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      key: cat.id,
+      style: {
+        marginBottom: 20
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 10,
+        paddingBottom: 8,
+        borderBottom: `1px solid ${C.bdr}`
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 18
+      }
+    }, cat.em), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.ac,
+        fontWeight: 700,
+        fontSize: 13,
+        textTransform: 'uppercase',
+        letterSpacing: '0.6px'
+      }
+    }, cat.label), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.mu,
+        fontSize: 10,
+        marginLeft: 'auto'
+      }
+    }, nms.length + qms.length)), cat.id === 'ecg' && ECG_DEF.map((e, i) => /*#__PURE__*/React.createElement(ECGCard, {
+      key: i,
+      e: e
+    })), nms.map(m => /*#__PURE__*/React.createElement(MCard, {
+      key: m[0],
+      m: m,
+      dates: dates,
+      vals: vals
+    })), qms.map(m => /*#__PURE__*/React.createElement(MQCard, {
+      key: m[0],
+      m: m,
+      dates: dates,
+      vals: vals
+    })));
+  }));
+}
+
 /* ══════════════════════════════════════════
    MAIN
    ══════════════════════════════════════════ */
@@ -1464,29 +1683,44 @@ function HealthDashboard() {
   const [showAdd, setShowAdd] = useState(false);
   const [showAddDate, setShowAddDate] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [searchQuery, setSearchQuery] = useState('');
   useEffect(() => {
     const h = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', h);
     return () => window.removeEventListener('resize', h);
   }, []);
-
-  /* Persistir cambios */
   useEffect(() => {
     saveState(vals, dates);
   }, [vals, dates]);
-  const addVal = (mid, dk, v) => {
-    setVals(p => {
-      const n = {
-        ...p,
-        [mid]: {
-          ...(p[mid] || {}),
-          [dk]: v
-        }
-      };
-      return n;
-    });
-  };
+  const addVal = (mid, dk, v) => setVals(p => ({
+    ...p,
+    [mid]: {
+      ...(p[mid] || {}),
+      [dk]: v
+    }
+  }));
   const addDate = d => setDates(p => [...p, d]);
+
+  // Secciones para Todo y Búsqueda
+  const allSections = useMemo(() => CATS.filter(c => c.id !== 'todo').map(cat => ({
+    cat,
+    nms: NM_DEF.filter(m => m[1] === cat.id),
+    qms: QM_DEF.filter(m => m[1] === cat.id)
+  })), []);
+  const q = searchQuery.trim().toLowerCase();
+  const isSearching = q.length >= 1;
+  const isTodo = selCat === 'todo';
+  const searchSections = useMemo(() => {
+    if (!isSearching) return allSections;
+    return allSections.map(s => ({
+      ...s,
+      nms: s.nms.filter(m => m[2].toLowerCase().includes(q) || m[3].toLowerCase().includes(q) || (m[7] || '').toLowerCase().includes(q)),
+      qms: s.qms.filter(m => m[2].toLowerCase().includes(q))
+    })).filter(s => s.nms.length || s.qms.length || s.cat.id === 'ecg' && 'ecg'.includes(q));
+  }, [q, isSearching, allSections]);
+  const totalSearchHits = searchSections.reduce((a, s) => a + s.nms.length + s.qms.length, 0);
+  const showMulti = isSearching || isTodo;
+  const sectionsToShow = isSearching ? searchSections : allSections;
   const catNMs = NM_DEF.filter(m => m[1] === selCat);
   const catQMs = QM_DEF.filter(m => m[1] === selCat);
   const catInfo = CATS.find(c => c.id === selCat);
@@ -1512,6 +1746,10 @@ function HealthDashboard() {
     background: C.bg0,
     zIndex: 2
   };
+  const handleSearch = v => {
+    setSearchQuery(v);
+    if (v && selCat === 'todo') setSelCat('hema');
+  };
 
   /* ── DESKTOP ── */
   if (!isMobile) return /*#__PURE__*/React.createElement("div", {
@@ -1524,7 +1762,7 @@ function HealthDashboard() {
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 220,
+      width: 222,
       flexShrink: 0,
       background: C.bg1,
       borderRight: `1px solid ${C.bdr}`,
@@ -1534,7 +1772,7 @@ function HealthDashboard() {
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '16px 14px 12px',
+      padding: '14px 14px 10px',
       borderBottom: `1px solid ${C.bdr}`
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -1542,27 +1780,97 @@ function HealthDashboard() {
       color: C.hi,
       fontWeight: 800,
       fontSize: 14,
-      marginBottom: 2
+      marginBottom: 1
     }
   }, "🧬 Panel de Salud"), /*#__PURE__*/React.createElement("div", {
     style: {
       color: C.mu,
       fontSize: 11
     }
-  }, "Nicolas Esmede · v", DATA_VERSION, " · ", dates.length, " estudios")), /*#__PURE__*/React.createElement("div", {
+  }, "Nicolas Esmede · ", dates.length, " estudios")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '10px 10px 8px',
+      borderBottom: `1px solid ${C.bdr}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      left: 10,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      fontSize: 13,
+      color: C.mu,
+      pointerEvents: 'none'
+    }
+  }, "🔍"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    value: searchQuery,
+    onChange: e => handleSearch(e.target.value),
+    placeholder: "Buscar marcador...",
+    style: {
+      width: '100%',
+      background: C.bg3,
+      border: `1px solid ${isSearching ? C.ac : C.bdr}`,
+      borderRadius: 9,
+      color: C.hi,
+      padding: '7px 30px 7px 30px',
+      fontSize: 12.5,
+      outline: 'none',
+      transition: 'border-color 0.15s'
+    }
+  }), isSearching && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSearchQuery(''),
+    style: {
+      position: 'absolute',
+      right: 8,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      background: 'none',
+      border: 'none',
+      color: C.mu,
+      cursor: 'pointer',
+      fontSize: 14,
+      lineHeight: 1,
+      padding: 2
+    }
+  }, "✕")), isSearching && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.mu,
+      fontSize: 10.5,
+      marginTop: 5,
+      paddingLeft: 2
+    }
+  }, totalSearchHits > 0 ? `${totalSearchHits} resultado${totalSearchHits !== 1 ? 's' : ''} en ${searchSections.length} categoría${searchSections.length !== 1 ? 's' : ''}` : 'Sin resultados')), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       overflowY: 'auto',
       padding: '8px'
     }
-  }, CATS.map(cat => {
+  }, CATS.map((cat, idx) => {
     const b = badges[cat.id] || {};
-    const has = NM_DEF.some(m => m[1] === cat.id) || QM_DEF.some(m => m[1] === cat.id) || cat.id === 'ecg';
+    const isTodoCat = cat.id === 'todo';
+    const has = NM_DEF.some(m => m[1] === cat.id) || QM_DEF.some(m => m[1] === cat.id) || cat.id === 'ecg' || isTodoCat;
     if (!has) return null;
-    const active = selCat === cat.id;
-    return /*#__PURE__*/React.createElement("button", {
-      key: cat.id,
-      onClick: () => setSelCat(cat.id),
+    const active = !isSearching && selCat === cat.id;
+    // Separador antes de Todo
+    const showSep = isTodoCat;
+    return /*#__PURE__*/React.createElement(React.Fragment, {
+      key: cat.id
+    }, showSep && /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 1,
+        background: C.bdr,
+        margin: '6px 4px 8px'
+      }
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setSelCat(cat.id);
+        setSearchQuery('');
+      },
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -1586,9 +1894,10 @@ function HealthDashboard() {
       }
     }, cat.em), /*#__PURE__*/React.createElement("span", {
       style: {
-        flex: 1
+        flex: 1,
+        fontWeight: isTodoCat ? 600 : 400
       }
-    }, cat.label), b.alerts > 0 && /*#__PURE__*/React.createElement("span", {
+    }, cat.label), !isTodoCat && b.alerts > 0 && /*#__PURE__*/React.createElement("span", {
       style: {
         background: C.re,
         color: '#fff',
@@ -1597,7 +1906,7 @@ function HealthDashboard() {
         fontSize: 10,
         fontWeight: 700
       }
-    }, b.alerts), !b.alerts && b.warns > 0 && /*#__PURE__*/React.createElement("span", {
+    }, b.alerts), !isTodoCat && !b.alerts && b.warns > 0 && /*#__PURE__*/React.createElement("span", {
       style: {
         background: C.am,
         color: '#000',
@@ -1606,7 +1915,7 @@ function HealthDashboard() {
         fontSize: 10,
         fontWeight: 700
       }
-    }, b.warns));
+    }, b.warns)));
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '10px',
@@ -1656,7 +1965,20 @@ function HealthDashboard() {
       alignItems: 'center',
       flexShrink: 0
     }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, isSearching ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.hi,
+      fontWeight: 700,
+      fontSize: 17
+    }
+  }, "🔍 \"", searchQuery, "\"", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.mu,
+      fontWeight: 400,
+      fontSize: 13,
+      marginLeft: 10
+    }
+  }, totalSearchHits, " resultado", totalSearchHits !== 1 ? 's' : '')) : /*#__PURE__*/React.createElement("span", {
     style: {
       color: C.hi,
       fontWeight: 700,
@@ -1697,7 +2019,12 @@ function HealthDashboard() {
       overflowY: 'auto',
       padding: '16px 20px 24px'
     }
-  }, selCat === 'ecg' && ECG_DEF.map((e, i) => /*#__PURE__*/React.createElement(ECGCard, {
+  }, showMulti ? /*#__PURE__*/React.createElement(MultiView, {
+    sections: sectionsToShow,
+    dates: dates,
+    vals: vals,
+    showCatTags: isSearching
+  }) : /*#__PURE__*/React.createElement(React.Fragment, null, selCat === 'ecg' && ECG_DEF.map((e, i) => /*#__PURE__*/React.createElement(ECGCard, {
     key: i,
     e: e
   })), catNMs.length > 0 && /*#__PURE__*/React.createElement("table", {
@@ -1706,31 +2033,9 @@ function HealthDashboard() {
       borderCollapse: 'separate',
       borderSpacing: '0 4px'
     }
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
-    style: {
-      ...thStyle,
-      textAlign: 'left'
-    }
-  }, "Marcador & Referencia"), dates.map(d => /*#__PURE__*/React.createElement("th", {
-    key: d.k,
-    style: {
-      ...thStyle,
-      textAlign: 'right'
-    }
-  }, /*#__PURE__*/React.createElement("div", null, d.label), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 400,
-      fontSize: 9.5,
-      textTransform: 'none',
-      letterSpacing: 0,
-      marginTop: 1,
-      color: C.mu
-    }
-  }, d.lab))), /*#__PURE__*/React.createElement("th", {
-    style: thStyle
-  }, "Tendencia"), /*#__PURE__*/React.createElement("th", {
-    style: thStyle
-  }, "Estado"))), /*#__PURE__*/React.createElement("tbody", null, catNMs.map(m => /*#__PURE__*/React.createElement(DRow, {
+  }, /*#__PURE__*/React.createElement(TableHeader, {
+    dates: dates
+  }), /*#__PURE__*/React.createElement("tbody", null, catNMs.map(m => /*#__PURE__*/React.createElement(DRow, {
     key: m[0],
     m: m,
     dates: dates,
@@ -1783,7 +2088,7 @@ function HealthDashboard() {
     m: m,
     dates: dates,
     vals: vals
-  })))))), showAdd && /*#__PURE__*/React.createElement(AddModal, {
+  }))))))), showAdd && /*#__PURE__*/React.createElement(AddModal, {
     dates: dates,
     onAdd: addVal,
     onClose: () => setShowAdd(false)
@@ -1806,14 +2111,15 @@ function HealthDashboard() {
     style: {
       background: C.bg1,
       borderBottom: `1px solid ${C.bdr}`,
-      padding: '12px 16px 10px',
+      padding: '11px 14px 10px',
       flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'center'
+      alignItems: 'center',
+      marginBottom: 8
     }
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1827,7 +2133,7 @@ function HealthDashboard() {
       fontSize: 11,
       marginTop: 1
     }
-  }, "Últ: ", lastDate.full, " · ", lastDate.lab)), /*#__PURE__*/React.createElement("button", {
+  }, "Últ: ", lastDate.full)), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowAdd(true),
     style: {
       background: C.ac,
@@ -1839,7 +2145,56 @@ function HealthDashboard() {
       cursor: 'pointer',
       fontWeight: 700
     }
-  }, "＋"))), /*#__PURE__*/React.createElement("div", {
+  }, "＋")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      left: 10,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      fontSize: 13,
+      color: C.mu,
+      pointerEvents: 'none'
+    }
+  }, "🔍"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    value: searchQuery,
+    onChange: e => handleSearch(e.target.value),
+    placeholder: "Buscar marcador...",
+    style: {
+      width: '100%',
+      background: C.bg3,
+      border: `1px solid ${isSearching ? C.ac : C.bdr}`,
+      borderRadius: 10,
+      color: C.hi,
+      padding: '9px 32px 9px 32px',
+      fontSize: 14,
+      outline: 'none'
+    }
+  }), isSearching && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSearchQuery(''),
+    style: {
+      position: 'absolute',
+      right: 10,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      background: 'none',
+      border: 'none',
+      color: C.mu,
+      cursor: 'pointer',
+      fontSize: 16,
+      lineHeight: 1
+    }
+  }, "✕")), isSearching && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.mu,
+      fontSize: 11,
+      marginTop: 5
+    }
+  }, totalSearchHits > 0 ? `${totalSearchHits} resultado${totalSearchHits !== 1 ? 's' : ''}` : 'Sin resultados')), !isSearching && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.bg1,
       borderBottom: `1px solid ${C.bdr}`,
@@ -1854,12 +2209,24 @@ function HealthDashboard() {
       padding: '8px 12px',
       width: 'max-content'
     }
-  }, CATS.filter(cat => NM_DEF.some(m => m[1] === cat.id) || QM_DEF.some(m => m[1] === cat.id) || cat.id === 'ecg').map(cat => {
+  }, CATS.filter(cat => NM_DEF.some(m => m[1] === cat.id) || QM_DEF.some(m => m[1] === cat.id) || cat.id === 'ecg' || cat.id === 'todo').map((cat, idx, arr) => {
     const b = badges[cat.id] || {};
     const active = selCat === cat.id;
-    return /*#__PURE__*/React.createElement("button", {
-      key: cat.id,
-      onClick: () => setSelCat(cat.id),
+    const isTodoCat = cat.id === 'todo';
+    return /*#__PURE__*/React.createElement(React.Fragment, {
+      key: cat.id
+    }, isTodoCat && /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 1,
+        background: C.bdr,
+        margin: '4px 2px',
+        flexShrink: 0
+      }
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setSelCat(cat.id);
+        setSearchQuery('');
+      },
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -1872,13 +2239,13 @@ function HealthDashboard() {
         background: active ? C.ac : 'transparent',
         color: active ? '#fff' : C.txt,
         fontSize: 12.5,
-        fontWeight: active ? 700 : 500
+        fontWeight: active ? 700 : isTodoCat ? 600 : 500
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 14
       }
-    }, cat.em), /*#__PURE__*/React.createElement("span", null, cat.label), b.alerts > 0 && /*#__PURE__*/React.createElement("span", {
+    }, cat.em), /*#__PURE__*/React.createElement("span", null, cat.label), !isTodoCat && b.alerts > 0 && /*#__PURE__*/React.createElement("span", {
       style: {
         background: C.re,
         color: '#fff',
@@ -1887,7 +2254,7 @@ function HealthDashboard() {
         fontSize: 10,
         fontWeight: 700
       }
-    }, b.alerts), !b.alerts && b.warns > 0 && /*#__PURE__*/React.createElement("span", {
+    }, b.alerts), !isTodoCat && !b.alerts && b.warns > 0 && /*#__PURE__*/React.createElement("span", {
       style: {
         background: C.am,
         color: '#000',
@@ -1896,7 +2263,7 @@ function HealthDashboard() {
         fontSize: 10,
         fontWeight: 700
       }
-    }, b.warns));
+    }, b.warns)));
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
@@ -1904,7 +2271,11 @@ function HealthDashboard() {
       padding: '12px 12px 80px',
       WebkitOverflowScrolling: 'touch'
     }
-  }, selCat === 'ecg' && ECG_DEF.map((e, i) => /*#__PURE__*/React.createElement(ECGCard, {
+  }, showMulti ? /*#__PURE__*/React.createElement(MultiViewMobile, {
+    sections: sectionsToShow,
+    dates: dates,
+    vals: vals
+  }) : /*#__PURE__*/React.createElement(React.Fragment, null, selCat === 'ecg' && ECG_DEF.map((e, i) => /*#__PURE__*/React.createElement(ECGCard, {
     key: i,
     e: e
   })), catNMs.map(m => /*#__PURE__*/React.createElement(MCard, {
@@ -1926,7 +2297,7 @@ function HealthDashboard() {
     m: m,
     dates: dates,
     vals: vals
-  }))), /*#__PURE__*/React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
       bottom: 0,
